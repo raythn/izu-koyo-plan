@@ -50,14 +50,12 @@ jobs:
         id: pages_ready
         env:
           PAGES_OUTCOME: ${{ steps.pages.outcome }}
-          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
           PAGES_ENABLEMENT_OUTCOME: ${{ steps.pages_enablement.outcome }}
-          PAGES_ENABLEMENT_BASE_URL: ${{ steps.pages_enablement.outputs.base_url }}
         run: |
           ready=false
-          if [ "$PAGES_OUTCOME" = "success" ] && [ -n "$PAGES_BASE_URL" ]; then
+          if [ "$PAGES_OUTCOME" = "success" ]; then
             ready=true
-          elif [ "$PAGES_ENABLEMENT_OUTCOME" = "success" ] && [ -n "$PAGES_ENABLEMENT_BASE_URL" ]; then
+          elif [ "$PAGES_ENABLEMENT_OUTCOME" = "success" ]; then
             ready=true
           fi
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
