@@ -24,11 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Pages
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
+        with:
+          token: ${{ secrets.PAGES_TOKEN != '' && secrets.PAGES_TOKEN || github.token }}
+          enablement: ${{ secrets.PAGES_TOKEN != '' }}
       - name: Upload artifact
+        if: ${{ steps.pages.outcome == 'success' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
       - name: Deploy
+        if: ${{ steps.pages.outcome == 'success' }}
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Skip deploy when Pages is not configured
+        if: ${{ steps.pages.outcome != 'success' }}
+        run: |
+          echo "::warning::Skipping GitHub Pages deployment because GitHub Pages is not enabled for this repository."
+          echo "::warning::Enable Pages in the repository settings or add a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
