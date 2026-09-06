@@ -23,12 +23,55 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Detect Pages token
+        id: pages_token
+        env:
+          PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
+        run: |
+          if [ -n "$PAGES_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup Pages
+        id: pages
+        if: ${{ steps.pages_token.outputs.present != 'true' }}
+        continue-on-error: true
         uses: actions/configure-pages@v5
+      - name: Setup Pages with enablement
+        id: pages_enablement
+        if: ${{ steps.pages_token.outputs.present == 'true' }}
+        continue-on-error: true
+        uses: actions/configure-pages@v5
+        with:
+          token: ${{ secrets.PAGES_TOKEN }}
+          enablement: true
+      - name: Determine whether Pages is ready
+        id: pages_ready
+        env:
+          PAGES_OUTCOME: ${{ steps.pages.outcome }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          PAGES_ENABLEMENT_OUTCOME: ${{ steps.pages_enablement.outcome }}
+          PAGES_ENABLEMENT_BASE_URL: ${{ steps.pages_enablement.outputs.base_url }}
+        run: |
+          ready=false
+          if [ "$PAGES_OUTCOME" = "success" ] && [ -n "$PAGES_BASE_URL" ]; then
+            ready=true
+          elif [ "$PAGES_ENABLEMENT_OUTCOME" = "success" ] && [ -n "$PAGES_ENABLEMENT_BASE_URL" ]; then
+            ready=true
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
       - name: Upload artifact
+        if: ${{ steps.pages_ready.outputs.ready == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
       - name: Deploy
+        if: ${{ steps.pages_ready.outputs.ready == 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Skip deploy when Pages is not configured
+        if: ${{ steps.pages_ready.outputs.ready != 'true' }}
+        run: |
+          echo "::warning::Skipping GitHub Pages deployment because GitHub Pages is not enabled for this repository."
+          echo "::warning::Enable Pages in the repository settings or add a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
