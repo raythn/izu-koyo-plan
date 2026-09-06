@@ -24,11 +24,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Pages
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
+      - name: Determine whether Pages is ready
+        id: pages_ready
+        env:
+          PAGES_OUTCOME: ${{ steps.pages.outcome }}
+        run: |
+          ready=false
+          if [ "$PAGES_OUTCOME" = "success" ]; then
+            ready=true
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
       - name: Upload artifact
+        if: ${{ steps.pages_ready.outputs.ready == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
       - name: Deploy
+        if: ${{ steps.pages_ready.outputs.ready == 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Skip deploy when Pages is not configured
+        if: ${{ steps.pages_ready.outputs.ready != 'true' }}
+        env:
+          PAGES_OUTCOME: ${{ steps.pages.outcome }}
+        run: |
+          echo "::warning::Skipping GitHub Pages deployment because Pages setup did not complete successfully."
+          echo "::warning::Setup outcome: configure-pages=$PAGES_OUTCOME."
+          echo "::warning::If Pages is not enabled yet, enable Pages in repository settings and configure it to build with GitHub Actions."
