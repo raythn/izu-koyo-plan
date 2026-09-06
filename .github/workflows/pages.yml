@@ -39,16 +39,16 @@ jobs:
           token: ${{ env.PAGES_TOKEN }}
           enablement: true
       - name: Upload artifact
-        if: ${{ steps.pages.outcome == 'success' || steps.pages_enablement.outcome == 'success' }}
+        if: ${{ steps.pages.outputs.base_url != '' || steps.pages_enablement.outputs.base_url != '' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
       - name: Deploy
-        if: ${{ steps.pages.outcome == 'success' || steps.pages_enablement.outcome == 'success' }}
+        if: ${{ steps.pages.outputs.base_url != '' || steps.pages_enablement.outputs.base_url != '' }}
         id: deployment
         uses: actions/deploy-pages@v4
       - name: Skip deploy when Pages is not configured
-        if: ${{ steps.pages.outcome != 'success' && steps.pages_enablement.outcome != 'success' }}
+        if: ${{ steps.pages.outputs.base_url == '' && steps.pages_enablement.outputs.base_url == '' }}
         run: |
           echo "::warning::Skipping GitHub Pages deployment because GitHub Pages is not enabled for this repository."
           echo "::warning::Enable Pages in the repository settings or add a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
