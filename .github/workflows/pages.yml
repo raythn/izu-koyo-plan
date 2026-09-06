@@ -70,6 +70,10 @@ jobs:
         uses: actions/deploy-pages@v4
       - name: Skip deploy when Pages is not configured
         if: ${{ steps.pages_ready.outputs.ready != 'true' }}
+        env:
+          PAGES_OUTCOME: ${{ steps.pages.outcome }}
+          PAGES_ENABLEMENT_OUTCOME: ${{ steps.pages_enablement.outcome }}
         run: |
-          echo "::warning::Skipping GitHub Pages deployment because GitHub Pages is not enabled for this repository."
-          echo "::warning::Enable Pages in the repository settings or add a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
+          echo "::warning::Skipping GitHub Pages deployment because Pages setup did not complete successfully."
+          echo "::warning::Setup outcomes: configure-pages=$PAGES_OUTCOME, configure-pages-enablement=$PAGES_ENABLEMENT_OUTCOME."
+          echo "::warning::If Pages is not enabled yet, enable Pages in repository settings or provide a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
