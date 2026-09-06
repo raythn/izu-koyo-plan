@@ -23,39 +23,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect Pages token
-        id: pages_token
-        env:
-          PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
-        run: |
-          if [ -n "$PAGES_TOKEN" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: Setup Pages
         id: pages
-        if: ${{ steps.pages_token.outputs.present != 'true' }}
         continue-on-error: true
         uses: actions/configure-pages@v5
-      - name: Setup Pages with enablement
-        id: pages_enablement
-        if: ${{ steps.pages_token.outputs.present == 'true' }}
-        continue-on-error: true
-        uses: actions/configure-pages@v5
-        with:
-          token: ${{ secrets.PAGES_TOKEN }}
-          enablement: true
       - name: Determine whether Pages is ready
         id: pages_ready
         env:
           PAGES_OUTCOME: ${{ steps.pages.outcome }}
-          PAGES_ENABLEMENT_OUTCOME: ${{ steps.pages_enablement.outcome }}
         run: |
           ready=false
           if [ "$PAGES_OUTCOME" = "success" ]; then
-            ready=true
-          elif [ "$PAGES_ENABLEMENT_OUTCOME" = "success" ]; then
             ready=true
           fi
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
@@ -71,14 +49,8 @@ jobs:
       - name: Skip deploy when Pages is not configured
         if: ${{ steps.pages_ready.outputs.ready != 'true' }}
         env:
-          TOKEN_PRESENT: ${{ steps.pages_token.outputs.present }}
           PAGES_OUTCOME: ${{ steps.pages.outcome }}
-          PAGES_ENABLEMENT_OUTCOME: ${{ steps.pages_enablement.outcome }}
         run: |
           echo "::warning::Skipping GitHub Pages deployment because Pages setup did not complete successfully."
-          if [ "$TOKEN_PRESENT" = "true" ]; then
-            echo "::warning::Setup outcome: configure-pages-enablement=$PAGES_ENABLEMENT_OUTCOME (configure-pages was skipped by design)."
-          else
-            echo "::warning::Setup outcome: configure-pages=$PAGES_OUTCOME (configure-pages-enablement was skipped by design)."
-          fi
-          echo "::warning::If Pages is not enabled yet, enable Pages in repository settings or provide a PAGES_TOKEN secret with repository administration and pages write permissions for first-time setup."
+          echo "::warning::Setup outcome: configure-pages=$PAGES_OUTCOME."
+          echo "::warning::If Pages is not enabled yet, enable Pages in repository settings and configure it to build with GitHub Actions."
